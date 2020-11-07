@@ -1,0 +1,24 @@
+---
+# os: Debian
+Debian-10:
+  crypto_pkgs:
+    - openssl
+    - python3-m2crypto
+
+Debian-9:
+  crypto_pkgs:
+    - openssl
+    - python-m2crypto
+
+# os: CentOS
+CentOS Linux-8:
+  crypto_pkgs:
+    - openssl
+    - python3-m2crypto
+
+CentOS Linux-7:
+  crypto_pkgs:
+    - openssl
+    - python36-m2crypto
+    # if you are using python 2
+    # - m2crypto

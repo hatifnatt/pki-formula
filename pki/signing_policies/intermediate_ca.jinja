@@ -1,0 +1,18 @@
+{% from tplroot ~ "/macros.jinja" import format_kwargs -%}
+x509_signing_policies:
+  http_server:
+    - minions: "{{ intermediate_signing_policies.http_server.minions }}"
+    - signing_private_key: "{{ intermediate_ca_key }}"
+    - signing_cert: "{{ intermediate_ca_cert }}"
+    {%- if 'subject_properties' in intermediate_signing_policies.http_server
+            and intermediate_signing_policies.http_server.get('subject_properties', {}) %}
+    {{- format_kwargs(intermediate_signing_policies.http_server.get('subject_properties', {})) }}
+    {%- endif %}
+    - basicConstraints: "critical CA:false"
+    - keyUsage: "critical digitalSignature, nonRepudiation, keyAgreement, keyEncipherment"
+    - extendedKeyUsage: "critical serverAuth"
+    - subjectKeyIdentifier: hash
+    - authorityKeyIdentifier: keyid,issuer:always
+    - days_valid: 365
+    - days_remaining: 30
+    - copypath: "{{ copypath }}"

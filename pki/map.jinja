@@ -1,0 +1,42 @@
+{#- Get the `tplroot` from `tplfile` we want same level as map.jinja
+    map.jinja must be imported without context like
+    from "./map.jinja" import somevar #}
+{% set tplroot = tplfile.split('/')[0] %}
+
+{#- Start imports as #}
+{% import_yaml tplroot ~ "/defaults.yaml" as defaults %}
+{% import_yaml tplroot ~ "/osfamilymap.yaml" as osfamilymap %}
+{% import_yaml tplroot ~ "/osmap.yaml" as osmap %}
+{% import_yaml tplroot ~ "/osfingermap.yaml" as osfingermap %}
+
+{% set  salt_pki = salt['grains.filter_by'](
+          defaults,
+          merge=salt['grains.filter_by'](
+            osfamilymap,
+            grain='os_family',
+            merge=salt['grains.filter_by'](
+              osfamilymap,
+              grain='os_family',
+              merge=salt['grains.filter_by'](
+                osmap,
+                grain='os',
+                merge=salt['grains.filter_by'](
+                  osfingermap,
+                  grain='osfinger',
+                  merge=salt['pillar.get']('salt_pki', {})
+                )
+              )
+            )
+          )
+        )
+%}
+
+{# Merge issuing defaults to every certificate #}
+{% set issue_defaults = salt_pki.issue_defaults %}
+{% for name, data in salt_pki.issue|dictsort %}
+{%  do salt_pki['issue'][name].update(salt['slsutil.merge'](issue_defaults, data)) %}
+{# Build absolute path for key and cert files #}
+{%  do salt_pki['issue'][name]['key'].update({'name': salt_pki['base_dir'] ~ '/' ~ data['key']['name']}) %}
+{%  do salt_pki['issue'][name]['cert'].update({'name': salt_pki['base_dir'] ~ '/' ~ data['cert']['name']}) %}
+{%  do salt_pki['issue'][name]['cert'].update({'public_key': data['key']['name']}) %}
+{% endfor %}

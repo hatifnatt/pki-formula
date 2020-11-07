@@ -1,0 +1,21 @@
+{% from tplroot ~ "/macros.jinja" import format_kwargs -%}
+x509_signing_policies:
+  # policy for signing intermediate ca certificates
+  intermediate:
+    - minions: "{{ root_signing_policies.intermediate.minions }}"
+    - signing_private_key: "{{ root_ca_key }}"
+    - signing_cert: "{{ root_ca_cert }}"
+    {%- if 'subject_properties' in root_signing_policies.intermediate
+            and root_signing_policies.intermediate.get('subject_properties', {}) %}
+    {{- format_kwargs(root_signing_policies.intermediate.get('subject_properties', {})) }}
+    {%- endif %}
+    - basicConstraints: "critical CA:true"
+    - keyUsage: "critical digitalSignature, cRLSign, keyCertSign"
+    - subjectKeyIdentifier: hash
+    - authorityKeyIdentifier: keyid,issuer:always
+    # 15 years
+    - days_valid: 5475
+    # days_remaining is set to 0 to disable automatic renewal by the x509 module.
+    # We don’t want the root certificate to be automatically recreated, invalidating all of our existing certificates.
+    - days_remaining: 0
+    - copypath: "{{ copypath }}"

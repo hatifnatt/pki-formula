@@ -1,0 +1,64 @@
+default:
+  crypto_pkgs:
+    - openssl
+    - python-m2crypto
+  base_dir: /etc/pki
+  root_ca:
+    # relative to base_dir
+    dir: root_ca
+    key: root_ca.key
+    cert: root_ca.crt
+    server: salt
+    # relative to 'dir' above
+    copypath: issued_certs
+    # additional arguments for x509.certificate_managed state, usually C, CN, OU, etc.
+    kwargs:
+      CN: Salt Root CA
+      OU: SaltStack PKI
+    signing_policies:
+      intermediate:
+        # string type, match.glog is used by default, if '@' found in string then match.compound is used
+        minions: salt
+  # there is can be multiple intermediate CA
+  intermediate_ca:
+    - name: intermediate_ca
+      # relative to base_dir
+      dir: intermediate_ca
+      key: intermediate_ca.key
+      cert: intermediate_ca.crt
+      server: salt
+      # relative to 'dir' above
+      copypath: issued_certs
+      # additional arguments for x509.certificate_managed state
+      kwargs:
+        CN: Salt Intermediate CA
+      signing_policies:
+        http_server:
+          # string type, match.glog is used by default, if '@' found in string then match.compound is used
+          minions: "*"
+  ca_certs:
+    # only add new certificates, fast
+    cmd_add: update-ca-certificates
+    # add and remove broken (non existent) certificates, slower
+    cmd_rebuild: update-ca-certificates -f
+    dir: /usr/local/share/ca-certificates
+    certs: []
+  issue_defaults:
+    # NB signing policy can override cert parameters
+    key:
+      name: "{{ grains.id }}.key"
+      bits: 2048
+      new: false
+      mode: "0600"
+      makedirs: true
+    cert:
+      name: "{{ grains.id }}.crt"
+      mode: "0600"
+      makedirs: true
+      # how long certifcate is valid
+      days_valid: 30
+      # if certificate valid for less than 'days_remaining' it will be reissued
+      # not automagically, relevant state must be called for this
+      days_remaining: 10
+      CN: "{{ grains.id }}"
+  issue: {}

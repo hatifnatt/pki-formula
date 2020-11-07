@@ -1,0 +1,146 @@
+salt_pki:
+  # list of packages required for x509 to work
+  crypto_pkgs:
+    - python-m2crypto
+  # all PKI files will be stored under that path
+  base_dir: /etc/pki
+  root_ca:
+    # relative to base_dir
+    dir: root_ca
+    key: root_ca.key
+    cert: root_ca.crt
+    # minion which will serve as Root CA
+    server: saltpki.domain.tld
+    # where to save signed certificates, relative to 'dir' above
+    copypath: issued_certs
+    # additional arguments for x509.certificate_managed state
+    # subject properties can be defined here, like CN, C, OU, etc.
+    # X509v3 extension also can be defined, like basicConstraints, crlDistributionPoints, subjectAltName, etc.
+    # for details check
+    # https://docs.saltstack.com/en/latest/ref/states/all/salt.states.x509.html#salt.states.x509.certificate_managed
+    # https://docs.saltstack.com/en/latest/ref/modules/all/salt.modules.x509.html#salt.modules.x509.create_certificate
+    kwargs:
+      CN: Salt Root CA
+      C: RU
+      ST: Moscow
+      L: Moscow
+      O: MyCompany
+      OU: SaltStack PKI
+      crlDistributionPoints: "URI:http://saltpki.domain.tld/root.crl"
+    # signing policies must be defined in the file 'signing_policies/root.jinja'
+    # with dictionaly below it is possible allow minions to use specific policy
+    # by default Root CA sing only Intermediate CA certificates, then Intermediate CA
+    # will sing regular server or client certificates
+    signing_policies:
+      # policy name from 'signing_policies/root.jinja'
+      intermediate:
+        # minions allowed to use this policy
+        # string type, match.glog is used by default, if '@' found in string then match.compound is used
+        minions: saltpki.domain.tld
+        # force subject properties for sertificate via signing policy
+        # those properties will be added to all certificates which match with this policy
+        subject_properties:
+          C: RU
+          ST: Moscow
+          L: Moscow
+          O: MyCompany
+          OU: SaltStack PKI
+  # there is can be multiple intermediate CA
+  intermediate_ca:
+    # all keyas are mandatory
+    - name: intermediate_ca
+      # relative to base_dir
+      dir: intermediate_ca
+      key: intermediate_ca.key
+      cert: intermediate_ca.crt
+      # minion which will serve as Intermediate CA
+      server: saltpki.domain.tld
+      # where to save signed certificates, relative to 'dir' above
+      copypath: issued_certs
+      # additional arguments for x509.certificate_managed state
+      # parameters defined in policy will override parameters from pillars
+      kwargs:
+        CN: Salt Intermediate CA
+        crlDistributionPoints: "URI:http://saltpki.domain.tld/intermediate.crl"
+      signing_policies:
+        http_server:
+          # string type, match.glog is used by default, if '@' found in string then match.compound is used
+          minions: "*"
+          # force subject properties for sertificate via signing policy
+          # those properties will be added to all certificates which match with this policy
+          # NB you can not override those in certificate properties, so don't set i.e. CN here
+          subject_properties:
+            C: RU
+            ST: Moscow
+            L: Moscow
+            O: MyCompany
+            OU: SaltStack PKI
+  ca_certs:
+    # commands to add certificated into system CA store
+    # only add new certificates, fast
+    cmd_add: update-ca-certificates
+    # add and remove broken (non existent) certificates, slower
+    cmd_rebuild: update-ca-certificates -f
+    # directory where to store certificates
+    dir: /usr/local/share/ca-certificates
+    # additional certificaes which need to be deployed in system CA storage
+    certs:
+        # filename of certificate
+        # source file will be looked in salt://{{ tpldir }}/ca_certs/
+      - name: company_root_ca.crt
+        # present / absent, if not defined assume 'present'
+        ensure: present
+      - name: vault_intermediate_ca.crt
+        ensure: present
+  # those setings are used for each certificate if not overriden by pillar data
+  # they are supposed to be used in defaults.yaml but can be overriden by pillar data too
+  issue_defaults:
+    # NB signing policy can override cert parameters
+    key:
+      name: "{{ grains.id }}.key"
+      bits: 2048
+      new: true
+      mode: "0600"
+      makedirs: true
+    cert:
+      name: "{{ grains.id }}.crt"
+      mode: "0600"
+      makedirs: true
+      # how long certifcate is valid
+      days_valid: 30
+      # if certificate valid for less than 'days_remaining' it will not be reissued automagically
+      # relevant state must be called for this
+      days_remaining: 10
+      CN: "{{ grains.id }}"
+  issue:
+    myservice:
+      # restart or reload some service after certificates will be issued
+      service:
+        # optional name of service, if not provided branch name will be used 'myservice' in this example
+        name: my_service_name
+        # use reload instead of restart, not all services are support reload
+        reload: True
+      # include some local state / formula which will be called after certificates are issued
+      # i.e. this state can deploy certs to another location with different permissions
+      # and restart or reload relative service
+      # provided string will be used directly in 'include' statement
+      #
+      # include: myservice.tls
+      # will became
+      #
+      # include:
+      #   - myservice.tls
+      include: myservice.tls
+      key:
+        # path where to save private key, relative to 'base_dir'
+        name: api/myservice.key
+        bits: 4096
+      cert:
+        # path where to save signed certificate, relative to 'base_dir'
+        name: api/myservice.crt
+        # which server use for signing
+        ca_server: saltpki.domain.tld
+        # which policy use for signing, it must be present on signing server
+        signing_policy: http_server
+        # any other paramater supported by 'x509.certificate_managed'
+        subjectAltName: "DNS:myservice.domain.tld"

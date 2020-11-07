@@ -1,0 +1,21 @@
+---
+# os_family: Debian
+Ubuntu: {}
+Raspbian: {}
+
+# os_family: RedHat
+Fedora: {}
+CentOS: {}
+
+# os_family: Suse
+SUSE: {}
+openSUSE: {}
+
+# os_family: Gentoo
+Funtoo: {}
+
+# os_family: Arch
+Manjaro: {}
+
+# os_family: Solaris
+SmartOS: {}
