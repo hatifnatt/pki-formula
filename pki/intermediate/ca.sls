@@ -36,17 +36,45 @@ include:
     - require:
       - x509: intermediate_ca_key
 
+{# Jinja hell below caused by two reasons:
+   - changes of module.run call style https://docs.saltstack.com/en/latest/ref/states/all/salt.states.module.html
+     therefor compatibility workaround is required
+   - mine fuctions was rewritten without any notice in docs or in changelog
+     https://github.com/saltstack/salt/commit/da29e1501e1182000272a0c5cff1597cf70fcbe1#diff-a64f3cb030f6172ac00301df45b9a678e36cbb2cac6d16c62e31cd8adfb1334cL187-R204
+     func` argument was replaced with `name`, therefor this compatibility workaround is required
+     https://github.com/saltstack/salt/issues/56584#issuecomment-621230980
+#}
+
+{# Here we'll create 'named mine function' - alias which represent combination of function and data
+without alias when same fuction executed twice on same minion, only last dataset will be available
+https://docs.saltstack.com/en/latest/topics/mine/#mine-functions #}
 {{ interca.name }}_cert_publish:
-  # This is deprecated `module.run` syntax, to be changed in Salt Sodium.
-  # https://docs.saltstack.com/en/latest/topics/mine/#mine-functions
   module.run:
+  {%- if 'module.run' in salt['config.get']('use_superseded', [])
+      or grains['saltversioninfo'] >= [3005] %}
+    ### new style ###
+    - mine.send:
+      {%- if grains['saltversioninfo'] < [3000] %}
+      - func: pki_{{ interca.name }}
+      {%- else %}
+      - name: pki_{{ interca.name }}
+      {%- endif %}
+      - mine_function: x509.get_pem_entry
+      - text: "{{ intermediate_ca_cert }}"
+    - onchanges:
+      - x509: {{ interca.name }}_cert
+  {%- else %}
+    ### legacy style ###
     - name: mine.send
-    # create alias which represent combination of function and data
-    # without alias when same fuction executed twice on same minion, only last dataset wil be available
+    {%- if grains['saltversioninfo'] < [3000] %}
     - func: pki_{{ interca.name }}
+    {%- else %}
+    - m_name: pki_{{ interca.name }}
+    {%- endif %}
     - kwargs:
         mine_function: x509.get_pem_entry
         text: "{{ intermediate_ca_cert }}"
     - onchanges:
       - x509: {{ interca.name }}_cert
+  {%- endif %}
 {% endfor %}
