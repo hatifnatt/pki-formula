@@ -10,7 +10,7 @@ salt_pki:
     key: root_ca.key
     cert: root_ca.crt
     # minion which will serve as Root CA
-    server: saltpki.domain.tld
+    ca_server: saltpki.domain.tld
     # where to save signed certificates, relative to 'dir' above
     copypath: issued_certs
     # additional arguments for x509.certificate_managed state
@@ -54,7 +54,7 @@ salt_pki:
       key: intermediate_ca.key
       cert: intermediate_ca.crt
       # minion which will serve as Intermediate CA
-      server: saltpki.domain.tld
+      ca_server: saltpki.domain.tld
       # where to save signed certificates, relative to 'dir' above
       copypath: issued_certs
       # additional arguments for x509.certificate_managed state

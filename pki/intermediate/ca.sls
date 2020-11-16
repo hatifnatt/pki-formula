@@ -29,7 +29,7 @@ include:
   x509.certificate_managed:
     - name: "{{ intermediate_ca_cert }}"
     - public_key: "{{ intermediate_ca_key }}"
-    - ca_server: {{ salt_pki.root_ca.server | default(grains.id) }}
+    - ca_server: {{ salt_pki.root_ca.ca_server | default(grains.id) }}
     - signing_policy: intermediate
     - backup: True
     {{- format_kwargs(interca.kwargs) }}

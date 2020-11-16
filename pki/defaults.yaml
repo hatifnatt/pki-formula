@@ -8,7 +8,7 @@ default:
     dir: root_ca
     key: root_ca.key
     cert: root_ca.crt
-    server: salt
+    ca_server: salt
     # relative to 'dir' above
     copypath: issued_certs
     # additional arguments for x509.certificate_managed state, usually C, CN, OU, etc.
@@ -26,7 +26,7 @@ default:
       dir: intermediate_ca
       key: intermediate_ca.key
       cert: intermediate_ca.crt
-      server: salt
+      ca_server: salt
       # relative to 'dir' above
       copypath: issued_certs
       # additional arguments for x509.certificate_managed state

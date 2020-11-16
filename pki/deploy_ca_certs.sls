@@ -33,7 +33,7 @@ ca_certs_dir:
 
 # Add CA certs issued by this formula
 # If this minion is CA itself deploy certificate directly from file
-{% if grains.id == salt_pki.root_ca.server -%}
+{% if grains.id == salt_pki.root_ca.ca_server -%}
 deploy_root_ca_from_file:
   x509.pem_managed:
     - name: "{{ salt_pki.ca_certs.dir }}/salt_root_ca.crt"
@@ -46,7 +46,7 @@ deploy_root_ca_from_file:
 deploy_root_ca_from_mine:
   x509.pem_managed:
     - name: "{{ salt_pki.ca_certs.dir }}/salt_root_ca.crt"
-    - text: {{ salt['mine.get'](salt_pki.root_ca.server, 'pki_root_ca')[salt_pki.root_ca.server]|replace('\n', '') }}
+    - text: {{ salt['mine.get'](salt_pki.root_ca.ca_server, 'pki_root_ca')[salt_pki.root_ca.ca_server]|replace('\n', '') }}
     - watch_in:
       - cmd: rebuild_ca_certs
 {% endif %}
@@ -55,7 +55,7 @@ deploy_root_ca_from_mine:
 {% set intermediate_ca_dir = salt_pki.base_dir ~'/' ~ interca.dir -%}
 {% set intermediate_ca_cert = intermediate_ca_dir ~ '/' ~ interca.cert -%}
 
-{% if grains.id == interca.server -%}
+{% if grains.id == interca.ca_server -%}
 deploy_{{ interca.name }}_from_file:
   x509.pem_managed:
     - name: "{{ salt_pki.ca_certs.dir }}/salt_{{ interca.name }}.crt"
@@ -67,7 +67,7 @@ deploy_{{ interca.name }}_from_file:
 deploy_{{ interca.name }}_from_mine:
   x509.pem_managed:
     - name: "{{ salt_pki.ca_certs.dir }}/salt_{{ interca.name }}.crt"
-    - text: {{ salt['mine.get'](interca.server, 'pki_' ~ interca.name)[interca.server]|replace('\n', '') }}
+    - text: {{ salt['mine.get'](interca.ca_server, 'pki_' ~ interca.name)[interca.ca_server]|replace('\n', '') }}
     - watch_in:
       - cmd: rebuild_ca_certs
 {% endif %}
