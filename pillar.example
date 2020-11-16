@@ -10,6 +10,7 @@ salt_pki:
     key: root_ca.key
     cert: root_ca.crt
     # minion which will serve as Root CA
+    # minion id expected here, not DNS name (if it differs from minion id), not IP address if DNS not present
     ca_server: saltpki.domain.tld
     # where to save signed certificates, relative to 'dir' above
     copypath: issued_certs
@@ -54,6 +55,7 @@ salt_pki:
       key: intermediate_ca.key
       cert: intermediate_ca.crt
       # minion which will serve as Intermediate CA
+      # minion id expected here, not DNS name (if it differs from minion id), not IP address if DNS not present
       ca_server: saltpki.domain.tld
       # where to save signed certificates, relative to 'dir' above
       copypath: issued_certs
@@ -139,6 +141,7 @@ salt_pki:
         # path where to save signed certificate, relative to 'base_dir'
         name: api/myservice.crt
         # which server use for signing
+        # minion id expected here, not DNS name (if it differs from minion id), not IP address if DNS not present
         ca_server: saltpki.domain.tld
         # which policy use for signing, it must be present on signing server
         signing_policy: http_server
