@@ -1,4 +1,18 @@
 ---
-Debian: {}
+Debian:
+  ca_certs:
+    # only add new certificates, fast
+    cmd_add: update-ca-certificates
+    # add and remove broken (non existent) certificates, slower
+    cmd_rebuild: update-ca-certificates -f
+    dir: /usr/local/share/ca-certificates
+    certs: []
 
-RedHat: {}
+RedHat:
+  ca_certs:
+    # only add new certificates, fast
+    cmd_add: update-ca-trust
+    # add and remove broken (non existent) certificates, slower
+    cmd_rebuild: update-ca-trust
+    dir: /usr/share/pki/ca-trust-source/anchors
+    certs: []
