@@ -1,13 +1,20 @@
 {% from "../map.jinja" import salt_pki -%}
 {% from "../macros.jinja" import format_kwargs -%}
-include:
-  - ..common
-  - ..hooks
 
 {% for interca in salt_pki.intermediate_ca -%}
 {% set intermediate_ca_dir = salt_pki.base_dir ~'/' ~ interca.dir -%}
 {% set intermediate_ca_key = intermediate_ca_dir ~ '/' ~ interca.key -%}
 {% set intermediate_ca_cert = intermediate_ca_dir ~ '/' ~ interca.cert -%}
+
+{# If this minion is supposed to be Intermediate CA according to data from pillars - run states #}
+{% if grains.id == interca.ca_server -%}
+
+{# Include required states on first loop iteration #}
+{% if loop.first -%}
+include:
+  - ..common
+  - ..hooks
+{% endif -%}
 
 {{ interca.name }}_dir:
   file.directory:
@@ -77,4 +84,15 @@ https://docs.saltstack.com/en/latest/topics/mine/#mine-functions #}
     - onchanges:
       - x509: {{ interca.name }}_cert
   {%- endif %}
+
+{# Otherwise fail without changes #}
+{% else -%}
+{{ interca.name }}_fail:
+  test.configurable_test_state:
+    - name: "Wrong minion for '{{ interca.name }}' Intermediate CA role"
+    - result: False
+    - changes: False
+    - comment: "According to pillar data this minion is not supposed to be Intermediate CA"
+{% endif -%}
+
 {% endfor %}
