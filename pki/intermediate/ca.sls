@@ -1,6 +1,10 @@
 {% from "../map.jinja" import salt_pki -%}
 {% from "../macros.jinja" import format_kwargs -%}
 
+include:
+  - ..common
+  - ..hooks
+
 {% for interca in salt_pki.intermediate_ca -%}
 {% set intermediate_ca_dir = salt_pki.base_dir ~'/' ~ interca.dir -%}
 {% set intermediate_ca_key = intermediate_ca_dir ~ '/' ~ interca.key -%}
@@ -8,13 +12,6 @@
 
 {# If this minion is supposed to be Intermediate CA according to data from pillars - run states #}
 {% if grains.id == interca.ca_server -%}
-
-{# Include required states on first loop iteration #}
-{% if loop.first -%}
-include:
-  - ..common
-  - ..hooks
-{% endif -%}
 
 {{ interca.name }}_dir:
   file.directory:
@@ -30,7 +27,7 @@ include:
     - backup: True
     - mode: "0600"
     - require:
-      - file: intermediate_ca_dir
+      - file: {{ interca.name }}_dir
 
 {{ interca.name }}_cert:
   x509.certificate_managed:
@@ -41,7 +38,7 @@ include:
     - backup: True
     {{- format_kwargs(interca.kwargs) }}
     - require:
-      - x509: intermediate_ca_key
+      - x509: {{ interca.name }}_key
 
 {# Jinja hell below caused by two reasons:
    - changes of module.run call style https://docs.saltstack.com/en/latest/ref/states/all/salt.states.module.html
@@ -85,14 +82,16 @@ https://docs.saltstack.com/en/latest/topics/mine/#mine-functions #}
       - x509: {{ interca.name }}_cert
   {%- endif %}
 
-{# Otherwise fail without changes #}
+{# Otherwise proceed without changes #}
 {% else -%}
-{{ interca.name }}_fail:
+{{ interca.name }}_skip:
   test.configurable_test_state:
     - name: "Wrong minion for '{{ interca.name }}' Intermediate CA role"
-    - result: False
+    - result: True
     - changes: False
-    - comment: "According to pillar data this minion is not supposed to be Intermediate CA"
+    - comment: |
+        According to pillar data this minion is not supposed to be '{{ interca.name }}' Intermediate CA,
+        skipping cerificate issue
 {% endif -%}
 
 {% endfor %}

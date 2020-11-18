@@ -1,6 +1,11 @@
 {% from "../map.jinja" import salt_pki -%}
 {% set tplroot = tpldir.split('/')[:-1] | join('/') -%}
 
+include:
+  - ..common
+  - ..hooks
+  - .ca
+
 {% for interca in salt_pki.intermediate_ca -%}
 {% set intermediate_ca_dir = salt_pki.base_dir ~'/' ~ interca.dir -%}
 {% set intermediate_ca_key = intermediate_ca_dir ~ '/' ~ interca.key -%}
@@ -9,14 +14,6 @@
 
 {# If this minion is supposed to be Intermediate CA according to data from pillars - run states #}
 {% if grains.id == interca.ca_server -%}
-
-{# Include required states on first loop iteration #}
-{% if loop.first -%}
-include:
-  - ..common
-  - ..hooks
-  - .ca
-{% endif -%}
 
 {{ interca.name }}_issued_cers_dir:
   file.directory:
@@ -38,14 +35,16 @@ include:
     - watch_in:
       - cmd: restart_salt_minion
 
-{# Otherwise fail without changes #}
+{# Otherwise proceed without changes #}
 {% else -%}
-{{ interca.name }}_policies_fail:
+{{ interca.name }}_policies_skip:
   test.configurable_test_state:
     - name: "Wrong minion for '{{ interca.name }}' Intermediate CA role"
-    - result: False
+    - result: True
     - changes: False
-    - comment: "According to pillar data this minion is not supposed to be Intermediate CA"
+    - comment: |
+        According to pillar data this minion is not supposed to be '{{ interca.name }}' Intermediate CA,
+        skipping signing policy installation
 {% endif -%}
 
 {% endfor %}
