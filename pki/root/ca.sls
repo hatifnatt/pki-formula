@@ -6,6 +6,8 @@
 {% set root_ca_key = root_ca_dir ~ '/' ~ salt_pki.root_ca.key -%}
 {% set root_ca_cert = root_ca_dir ~ '/' ~ salt_pki.root_ca.cert -%}
 
+{# If this minion is supposed to be Root CA according to data from pillars - run states #}
+{% if grains.id == salt_pki.root_ca.ca_server -%}
 include:
   - ..common
 
@@ -84,3 +86,13 @@ root_ca_cert_publish:
     - onchanges:
       - x509: root_ca_cert
   {%- endif %}
+
+{# Otherwise fail without changes #}
+{% else -%}
+root_ca_fail:
+  test.configurable_test_state:
+    - name: "Wrong minion for Root CA role"
+    - result: False
+    - changes: False
+    - comment: "According to pillar data this minion is not supposed to be Root CA"
+{% endif -%}
