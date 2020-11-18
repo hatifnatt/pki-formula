@@ -17,7 +17,7 @@ ca_certs_dir:
 {% if ensure == 'present' -%}
 {{ name_no_ext }}_present:
   file.managed:
-    - name: /usr/local/share/ca-certificates/{{ cert.name }}
+    - name: "{{ salt_pki.ca_certs.dir }}/{{ cert.name }}"
     - source: salt://{{ tpldir }}/ca_certs/{{ cert.name }}
     - watch_in:
       - cmd: add_ca_certs
@@ -25,7 +25,7 @@ ca_certs_dir:
 {% elif ensure == 'absent' -%}
 {{ name_no_ext }}_absent:
   file.absent:
-    - name: /usr/local/share/ca-certificates/{{ cert.name }}
+    - name: "{{ salt_pki.ca_certs.dir }}/{{ cert.name }}"
     - watch_in:
       - cmd: rebuild_ca_certs
 {% endif -%}
