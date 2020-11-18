@@ -120,3 +120,84 @@ salt_pki:
 ```
 
 В качестве альтернативы любая формула может иметь, собственныые, независимые от `pki.issue` стейты для выпуска сертификатов.
+
+## Тонкости при использовании формулы
+
+### Cоздании и привязка pillar
+
+Данные пиллар `salt_pki:root_ca` и `salt_pki:intermediate_ca` должны быть доступны для всех миньонов, они требуются для стейта `pki.deploy_ca_certs` без этих данных формула не сможет извлечь корневой и промежуточные сертификаты из `salt-mine` на миньонах выполняющих роли корневого и / или промежуточного центра сертификации. К примеру, может быть использована такя конфигурция pillar-файлов:
+
+Общий файл прикрепленный ко всем миньонам `pki/common.sls`
+
+```yaml
+salt_pki:
+  root_ca:
+    dir: root_ca
+    key: root_ca.key
+    cert: root_ca.crt
+    ca_server: saltmaster.local
+    ... skiped ...
+  intermediate_ca:
+    - name: intermediate_ca
+      dir: intermediate_ca
+      key: intermediate_ca.key
+      cert: intermediate_ca.crt
+      ca_server: saltmaster.local
+      ... skiped ...
+```
+
+Ключевым в этом наборе данных является значение ключа `ca_server`, формула использует эти данные нескольких целей:
+
+* определяет, можно ли создать корневой / промежуточный сертификаты на миньоне или нет, т.е., для примера выше, корневой и промежуточный сертификаты не будут выпущены на миньоне если его `id` отличается от `saltmaster.local`
+* определяет, в `salt-mine` каких миньонов можно взять корневой / промежуточный сертификаты, для добавления их хранилище довереннх сертификатов на других миньонах в процессе выполнения `pki.deploy_ca_certs`
+* стейт `pki.intermediate` отправляет запрос на подпись промежуточного сертификата на миньон указанный в `salt_pki:root_ca:ca_server`, да, данная формула подразумевает наличие лишь одного корневого центра сертифкации
+
+Файл с данными для выпуска одного сертификата `pki/webserver.sls`
+
+```yaml
+salt_pki:
+  issue:
+    example.tld:
+      key:
+        name: www/example.tld.key
+        bits: 4096
+      cert:
+        name: www/example.tld.crt
+        ca_server: saltmaster.local
+        signing_policy: http_server
+        subjectAltName: "DNS:mysite.tld,DNS:www.mysite.tld"
+```
+
+Pillar `top.sls`
+
+```yaml
+base:
+  '*':
+    - pki.common
+  'webserver':
+    - pki.webserver
+```
+
+State `top.sls`
+
+```yaml
+base:
+  'saltmaster*':
+    - pki.root
+    - pki.intermediate
+    - pki.deploy_ca_certs
+  'webserver':
+    - pki.deploy_ca_certs
+    - pki.issue
+```
+
+В случае, ручного примения сейтов к миньонам, порядок такой:
+
+```bash
+salt 'saltmaster*' state.sls pki.root,pki.intermediate,pki.deploy_ca_certs
+salt 'webserver' state.sls pki.deploy_ca_certs,pki.issue
+```
+
+### Порядок применения стейтов
+
+Порядок применения стейтов важен. Для того чтоб все выполнилось без ошибок, сначала должны быть применены стейты отвечающие за выпуск корневого и промежуточного сертификатов `pki.root`, `pki.intermediate`, в процессе их выполнения в `salt-mine` будут сохранены необходимые данные, и только после этого использован сейт для установки доверенных сертификатов в хранилище OS - `pki.deploy_ca_certs`, стейт по выпуску простых сертификатов - `pki.issue`, очевидно, нужно применять в последнюю очередь.

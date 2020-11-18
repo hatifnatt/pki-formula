@@ -4,6 +4,9 @@ salt_pki:
     - python-m2crypto
   # all PKI files will be stored under that path
   base_dir: /etc/pki
+  # NB! root_ca and intermediate_ca pillar data must be available to all minions, formula require this data, to
+  # correctly install root and intermediate certificates into OS even for minions where it's not required
+  # to issue any certificates at all
   root_ca:
     # relative to base_dir
     dir: root_ca
