@@ -201,3 +201,54 @@ salt 'webserver' state.sls pki.deploy_ca_certs,pki.issue
 ### Порядок применения стейтов
 
 Порядок применения стейтов важен. Для того чтоб все выполнилось без ошибок, сначала должны быть применены стейты отвечающие за выпуск корневого и промежуточного сертификатов `pki.root`, `pki.intermediate`, в процессе их выполнения в `salt-mine` будут сохранены необходимые данные, и только после этого использован сейт для установки доверенных сертификатов в хранилище OS - `pki.deploy_ca_certs`, стейт по выпуску простых сертификатов - `pki.issue`, очевидно, нужно применять в последнюю очередь.
+
+### Ручная отправка данных в salt-mine
+
+Может произойти ситуация когда сертификат не был отправлен в `salt-mine` после выпуска по тем или иным причинам. А т.к. отправка в `salt-mine` происходит только при изменении сертификата, обычно это перевыпуск сертификата, то она не будет выполнена при повторном запуске формулы. Это мжно исправить отправив нужные данные в `salt-mine` вручную.
+
+Отправка корневого сертификата выпущенного на миньоне `ca`
+
+Pillar
+
+```yaml
+salt_pki:
+  base_dir: /etc/pki
+  root_ca:
+    dir: root_ca
+    key: root_ca.key
+    cert: root_ca.crt
+    ca_server: ca
+```
+
+```bash
+# запуск на мастере
+salt 'ca' mine.send pki_root_ca mine_function=x509.get_pem_entry text=/etc/pki/root_ca/root_ca.crt
+
+# запуск локально на миньоне `ca`
+salt-call mine.send pki_root_ca mine_function=x509.get_pem_entry text=/etc/pki/root_ca/root_ca.crt
+```
+
+`/etc/pki/root_ca/root_ca.crt` - путь к файлу с сертифкатом на миньоне, может отличаться, если используются другие значения в pillar-ах.
+
+Отправка промежуточного сертификата `my_inter_ca` выпущенного на миньоне `inter_ca`
+
+Pillar
+
+```yaml
+salt_pki:
+  base_dir: /etc/pki
+  intermediate_ca:
+    - name: my_inter_ca
+      dir: my_inter_ca
+      key: my_inter_ca.key
+      cert: my_inter_ca.crt
+      ca_server: inter_ca
+```
+
+```bash
+# запуск на мастере
+salt 'inter_ca' mine.send pki_my_inter_ca mine_function=x509.get_pem_entry text=/etc/pki/my_inter_ca/my_inter_ca.crt
+
+# запуск локально на миньоне `inter_ca`
+salt-call mine.send pki_my_inter_ca mine_function=x509.get_pem_entry text=/etc/pki/my_inter_ca/my_inter_ca.crt
+```
