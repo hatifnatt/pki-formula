@@ -3,7 +3,7 @@
 # Install packages required for salt x509 module to function
 crypto_pkgs:
   pkg.installed:
-    - names: {{ salt_pki.crypto_pkgs|tojson }}
+    - pkgs: {{ salt_pki.crypto_pkgs|tojson }}
     - reload_modules: True
 
 # Base directory for all certificates created with this formula
