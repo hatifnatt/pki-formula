@@ -39,7 +39,7 @@ include:
     {%- endif %}
 
 {% if 'service' in data -%}
-{{ data | traverse('service:name', name) }}_service:
+pki_{{ data | traverse('service:name', name) }}_service:
   service.running:
     - name: {{ data | traverse('service:name', name) }}
     - reload: {{ data | traverse('service:reload', False) }}
