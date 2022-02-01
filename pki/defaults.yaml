@@ -1,7 +1,7 @@
 default:
   crypto_pkgs:
     - openssl
-    - python-m2crypto
+    - python3-m2crypto
   base_dir: /etc/pki
   root_ca:
     # relative to base_dir

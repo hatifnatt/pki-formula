@@ -1,5 +1,10 @@
 ---
 # os: Debian
+Debian-11:
+  crypto_pkgs:
+    - openssl
+    - python3-m2crypto
+
 Debian-10:
   crypto_pkgs:
     - openssl
