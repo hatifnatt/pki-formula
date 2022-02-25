@@ -27,3 +27,9 @@ CentOS Linux-7:
     - python36-m2crypto
     # if you are using python 2
     # - m2crypto
+
+# os: RedHat
+Red Hat Enterprise Linux Server-7:
+  crypto_pkgs:
+    # epel required
+    - python36-m2crypto
