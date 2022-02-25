@@ -10,4 +10,4 @@ crypto_pkgs:
 pki_dir:
   file.directory:
     - name: "{{ salt_pki.base_dir }}"
-    - mode: "0644"
+    - mode: "0755"
