@@ -11,23 +11,23 @@
 include:
   - ..common
 
-root_ca_dir:
+pki_root_ca_dir:
   file.directory:
     - name: "{{ root_ca_dir }}"
     - mode: "0600"
     - require:
-      - file: pki_dir
+      - file: pki_common_dir
 
-root_ca_key:
+pki_root_ca_key:
   x509.private_key_managed:
     - name: "{{ root_ca_key }}"
     - bits: 4096
     - backup: True
     - mode: "0600"
     - require:
-      - file: root_ca_dir
+      - file: pki_root_ca_dir
 
-root_ca_cert:
+pki_root_ca_cert:
   x509.certificate_managed:
     - name: "{{ root_ca_cert }}"
     - signing_private_key: "{{ root_ca_key }}"
@@ -42,7 +42,7 @@ root_ca_cert:
     - days_remaining: 0
     - backup: True
     - require:
-      - x509: root_ca_key
+      - x509: pki_root_ca_key
 
 {# Jinja hell below caused by two reasons:
    - changes of module.run call style https://docs.saltstack.com/en/latest/ref/states/all/salt.states.module.html
@@ -56,7 +56,7 @@ root_ca_cert:
 {# Here we'll create 'named mine function' - alias which represent combination of function and data
 without alias when same fuction executed twice on same minion, only last dataset will be available
 https://docs.saltstack.com/en/latest/topics/mine/#mine-functions #}
-root_ca_cert_publish:
+pki_root_ca_cert_publish:
   module.run:
   # Workaround for deprecated `module.run` syntax, subject to change in Salt 3005
   {%- if 'module.run' in salt['config.get']('use_superseded', [])
@@ -71,7 +71,7 @@ root_ca_cert_publish:
       - mine_function: x509.get_pem_entry
       - text: "{{ root_ca_cert }}"
     - onchanges:
-      - x509: root_ca_cert
+      - x509: pki_root_ca_cert
   {%- else %}
     ### legacy style ###
     - name: mine.send
@@ -84,12 +84,12 @@ root_ca_cert_publish:
         mine_function: x509.get_pem_entry
         text: "{{ root_ca_cert }}"
     - onchanges:
-      - x509: root_ca_cert
+      - x509: pki_root_ca_cert
   {%- endif %}
 
 {# Otherwise fail without changes #}
 {% else -%}
-root_ca_fail:
+pki_root_ca_fail:
   test.configurable_test_state:
     - name: "Wrong minion for Root CA role"
     - result: False

@@ -13,23 +13,23 @@ include:
 {# If this minion is supposed to be Intermediate CA according to data from pillars - run states #}
 {% if grains.id == interca.ca_server -%}
 
-{{ interca.name }}_dir:
+pki_intermediate_ca_<{{ interca.name }}>_dir:
   file.directory:
     - name: "{{ intermediate_ca_dir }}"
     - mode: "0600"
     - require:
-      - file: pki_dir
+      - file: pki_common_dir
 
-{{ interca.name }}_key:
+pki_intermediate_ca_<{{ interca.name }}>_key:
   x509.private_key_managed:
     - name: "{{ intermediate_ca_key }}"
     - bits: 4096
     - backup: True
     - mode: "0600"
     - require:
-      - file: {{ interca.name }}_dir
+      - file: pki_intermediate_ca_<{{ interca.name }}>_dir
 
-{{ interca.name }}_cert:
+pki_intermediate_ca_<{{ interca.name }}>_cert:
   x509.certificate_managed:
     - name: "{{ intermediate_ca_cert }}"
     - public_key: "{{ intermediate_ca_key }}"
@@ -38,7 +38,7 @@ include:
     - backup: True
     {{- format_kwargs(interca.kwargs) }}
     - require:
-      - x509: {{ interca.name }}_key
+      - x509: pki_intermediate_ca_<{{ interca.name }}>_key
 
 {# Jinja hell below caused by two reasons:
    - changes of module.run call style https://docs.saltstack.com/en/latest/ref/states/all/salt.states.module.html
@@ -52,7 +52,7 @@ include:
 {# Here we'll create 'named mine function' - alias which represent combination of function and data
 without alias when same fuction executed twice on same minion, only last dataset will be available
 https://docs.saltstack.com/en/latest/topics/mine/#mine-functions #}
-{{ interca.name }}_cert_publish:
+pki_intermediate_ca_<{{ interca.name }}>_cert_publish:
   module.run:
   {%- if 'module.run' in salt['config.get']('use_superseded', [])
       or grains['saltversioninfo'] >= [3005] %}
@@ -66,7 +66,7 @@ https://docs.saltstack.com/en/latest/topics/mine/#mine-functions #}
       - mine_function: x509.get_pem_entry
       - text: "{{ intermediate_ca_cert }}"
     - onchanges:
-      - x509: {{ interca.name }}_cert
+      - x509: pki_intermediate_ca_<{{ interca.name }}>_cert
   {%- else %}
     ### legacy style ###
     - name: mine.send
@@ -79,12 +79,12 @@ https://docs.saltstack.com/en/latest/topics/mine/#mine-functions #}
         mine_function: x509.get_pem_entry
         text: "{{ intermediate_ca_cert }}"
     - onchanges:
-      - x509: {{ interca.name }}_cert
+      - x509: pki_intermediate_ca_<{{ interca.name }}>_cert
   {%- endif %}
 
 {# Otherwise proceed without changes #}
 {% else -%}
-{{ interca.name }}_skip:
+pki_intermediate_ca_<{{ interca.name }}>_skip:
   test.configurable_test_state:
     - name: "Wrong minion for '{{ interca.name }}' Intermediate CA role"
     - result: True

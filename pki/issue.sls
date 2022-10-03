@@ -14,7 +14,7 @@ include:
 {% endfor %}
 
 {% for name, data in salt_pki.issue|dictsort -%}
-{{ name }}_key:
+pki_issue_<{{ name }}>_key:
   x509.private_key_managed:
     {{- format_kwargs(data.key) }}
     {# Usage of prereq cause a problem - state won't be executed if reuqired state won't generate changes
@@ -30,7 +30,7 @@ include:
       - sls: {{ data.include }}
     {%- endif %}
 
-{{ name }}_cert:
+pki_issue_<{{ name }}>_cert:
   x509.certificate_managed:
     {{- format_kwargs(data.cert) }}
     {%- if 'include' in data %}
@@ -39,12 +39,12 @@ include:
     {%- endif %}
 
 {% if 'service' in data -%}
-pki_{{ data | traverse('service:name', name) }}_service:
+pki_issue_<{{ data | traverse('service:name', name) }}>_service:
   service.running:
     - name: {{ data | traverse('service:name', name) }}
     - reload: {{ data | traverse('service:reload', False) }}
     - watch:
-      - x509: {{ name }}_key
-      - x509: {{ name }}_cert
+      - x509: pki_issue_<{{ name }}>_key
+      - x509: pki_issue_<{{ name }}>_cert
 {% endif -%}
 {% endfor %}

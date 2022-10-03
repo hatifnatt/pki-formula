@@ -12,12 +12,12 @@ include:
   - ..hooks
   - .ca
 
-root_ca_issued_cers_dir:
+pki_root_policies_ca_issued_cers_dir:
   file.directory:
     - name: "{{ root_ca_copypath }}"
     - mode: "0640"
 
-root_signing_policies:
+pki_root_policies:
   file.managed:
     - name: /etc/salt/minion.d/signing_policies_root.conf
     - source: salt://{{ tplroot }}/signing_policies/root.jinja
@@ -30,11 +30,11 @@ root_signing_policies:
         copypath: {{ root_ca_copypath }}
     # restart the salt_minion when the file is changed
     - watch_in:
-      - cmd: restart_salt_minion
+      - cmd: pki_hooks_restart_salt_minion
 
 {# Otherwise fail without changes #}
 {% else -%}
-root_ca_policies_fail:
+pki_root_policies_fail:
   test.configurable_test_state:
     - name: "Wrong minion for Root CA role"
     - result: False

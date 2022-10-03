@@ -15,12 +15,12 @@ include:
 {# If this minion is supposed to be Intermediate CA according to data from pillars - run states #}
 {% if grains.id == interca.ca_server -%}
 
-{{ interca.name }}_issued_cers_dir:
+pki_intermediate_policies_<{{ interca.name }}>_issued_cers_dir:
   file.directory:
     - name: "{{ intermediate_ca_copypath }}"
     - mode: "0644"
 
-{{ interca.name }}_signing_policies:
+pki_intermediate_policies_<{{ interca.name }}>:
   file.managed:
     - name: /etc/salt/minion.d/signing_policies_{{ interca.name }}.conf
     - source: salt://{{ tplroot }}/signing_policies/{{ interca.name }}.jinja
@@ -33,11 +33,11 @@ include:
         copypath: {{ intermediate_ca_copypath }}
     # restart the salt_minion when the file changes
     - watch_in:
-      - cmd: restart_salt_minion
+      - cmd: pki_hooks_restart_salt_minion
 
 {# Otherwise proceed without changes #}
 {% else -%}
-{{ interca.name }}_policies_skip:
+pki_intermediate_policies_<{{ interca.name }}>_skip:
   test.configurable_test_state:
     - name: "Wrong minion for '{{ interca.name }}' Intermediate CA role"
     - result: True
