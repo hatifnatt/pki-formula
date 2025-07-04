@@ -32,10 +32,10 @@ pki_root_ca_cert:
     - name: "{{ root_ca_cert }}"
     - signing_private_key: "{{ root_ca_key }}"
     {{- format_kwargs(rootca.kwargs) }}
-    - basicConstraints: "critical CA:true"
-    - keyUsage: "critical digitalSignature, cRLSign, keyCertSign"
+    - basicConstraints: "critical, CA:true"
+    - keyUsage: "critical, digitalSignature, cRLSign, keyCertSign"
     - subjectKeyIdentifier: hash
-    - authorityKeyIdentifier: keyid,issuer:always
+    - authorityKeyIdentifier: keyid:always,issuer
     - days_valid: 7300 # 20 years
     # days_remaining is set to 0 to disable automatic renewal by the x509 module.
     # We don’t want the root certificate to be automatically recreated, invalidating all of our existing certificates.

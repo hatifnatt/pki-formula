@@ -1,7 +1,12 @@
 salt_pki:
   # list of packages required for x509 to work
   crypto_pkgs:
-    - python-m2crypto
+    - openssl
+    # use x509_v2 module based on `cryptography` library which is already present in onedir Salt 3006+ installations
+    # x509_v2 activation instructions
+    # https://docs.saltproject.io/en/3006/ref/modules/all/salt.modules.x509_v2.html#explicit-activation
+    # m2crypto is not required in this case
+    # - python3-m2crypto
   # all PKI files will be stored under that path
   base_dir: /etc/pki
   # NB! root_ca and intermediate_ca pillar data must be available to all minions, formula require this data, to

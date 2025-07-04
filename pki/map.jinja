@@ -38,5 +38,5 @@
 {# Build absolute path for key and cert files #}
 {%  do salt_pki['issue'][name]['key'].update({'name': salt_pki['base_dir'] ~ '/' ~ data['key']['name']}) %}
 {%  do salt_pki['issue'][name]['cert'].update({'name': salt_pki['base_dir'] ~ '/' ~ data['cert']['name']}) %}
-{%  do salt_pki['issue'][name]['cert'].update({'public_key': data['key']['name']}) %}
+{%  do salt_pki['issue'][name]['cert'].update({'private_key': data['key']['name']}) %}
 {% endfor %}
