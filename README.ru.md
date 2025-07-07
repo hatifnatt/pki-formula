@@ -288,8 +288,14 @@ salt-call mine.get '*' pki_root_ca
 
 ```bash
 # запуск на мастере
-salt 'inter_ca' mine.get 'inter_ca' pki_intermediate_ca
+salt 'some_minion' mine.get 'inter_ca' pki_intermediate_ca
 
 # запуск локально на произвольном миньоне
 salt-call mine.get 'inter_ca' pki_intermediate_ca
+
+# wildcard вариант, из него будет понятно ID миньона являющегося Intermediate CA
+# запуск на мастере
+salt 'some_minion' mine.get '*' pki_intermediate_ca
+# запуск на миньоне
+salt-call mine.get '*' pki_intermediate_ca
 ```
