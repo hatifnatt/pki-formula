@@ -252,3 +252,33 @@ salt 'inter_ca' mine.send pki_my_inter_ca mine_function=x509.get_pem_entry text=
 # запуск локально на миньоне `inter_ca`
 salt-call mine.send pki_my_inter_ca mine_function=x509.get_pem_entry text=/etc/pki/my_inter_ca/my_inter_ca.crt
 ```
+
+### Получение данных из salt-mine
+
+Так как мы читаем данные из mine, то прочесть их можно используя любой минион (с настройками по умолчанию) поэтому в данном примере `mine.get` выполняется не на миньоне `ca`, а на произвольном миньоне `some_minion`
+
+Проверить наличие данных в mine можно следующим образом
+
+```bash
+# запуск на мастере
+salt 'some_minion' mine.get 'ca' pki_root_ca
+
+# запуск локально на произвольном миньоне
+salt-call mine.get 'ca' pki_root_ca
+
+# wildcard вариант, из него будет понятно ID миньона являющегося CA
+# запуск на мастере
+salt 'some_minion' mine.get '*' pki_root_ca
+# запуск на миньоне
+salt-call mine.get '*' pki_root_ca
+```
+
+Пример для промежуточного сертификата.
+
+```bash
+# запуск на мастере
+salt 'inter_ca' mine.get 'inter_ca' pki_intermediate_ca
+
+# запуск локально на произвольном миньоне
+salt-call mine.get 'inter_ca' pki_intermediate_ca
+```
