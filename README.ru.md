@@ -1,4 +1,25 @@
+<!-- omit in toc -->
 # Формула для развертывания внутреннего PKI
+
+* [Настройка мастера и миньонов](#настройка-мастера-и-миньонов)
+* [Принцип работы](#принцип-работы)
+* [Доступные стейты](#доступные-стейты)
+  * [pki.common](#pkicommon)
+  * [pki.root](#pkiroot)
+  * [pki.root.ca](#pkirootca)
+  * [pki.root.policies](#pkirootpolicies)
+  * [pki.intermediate](#pkiintermediate)
+  * [pki.intermediate.ca](#pkiintermediateca)
+  * [pki.intermediate.policies](#pkiintermediatepolicies)
+  * [pki.deploy\_ca\_certs](#pkideploy_ca_certs)
+    * [Добавление сертификата](#добавление-сертификата)
+    * [Удаление или замена сертификата](#удаление-или-замена-сертификата)
+  * [pki.issue](#pkiissue)
+* [Тонкости при использовании формулы](#тонкости-при-использовании-формулы)
+  * [Cоздании и привязка pillar](#cоздании-и-привязка-pillar)
+  * [Порядок применения стейтов](#порядок-применения-стейтов)
+  * [Ручная отправка данных в salt-mine](#ручная-отправка-данных-в-salt-mine)
+  * [Получение данных из salt-mine](#получение-данных-из-salt-mine)
 
 ## Настройка мастера и миньонов
 
@@ -24,25 +45,15 @@ peer:
 
 ## Доступные стейты
 
-* [pki.common](#common)
-* [pki.root](#root)
-* [pki.root.ca](#root.ca)
-* [pki.root.policies](#root.policies)
-* [pki.intermediate](#intermediate)
-* [pki.intermediate.ca](#intermediate.ca)
-* [pki.intermediate.policies](#intermediate.policies)
-* [pki.deploy_ca_certs](#deploy_ca_certs)
-* [pki.issue](#issue)
-
-### common
+### pki.common
 
 Данный стейт необходимо выполнять на каждом миньоне который будет использовать PKI, он отвечает за создание каталога для сертификатов и установку нпакетов необходимых для работы модуля Солт - `x509`
 
-### root
+### pki.root
 
-Выполнит [pki.root.ca](#root.ca) и [pki.root.policies](#root.policies)
+Выполнит [pki.root.ca](#pkirootca) и [pki.root.policies](#pkirootpolicies)
 
-### root.ca
+### pki.root.ca
 
 Стейт для создания корневого центра сертификации, на миньоне к которому будет применен данный стейт будет выпущен долгосрочный сертификат с параметрами необходимыми для корневого сертификата. Выпущенный сертификат будет опубликован в Salt Mine под алиасом `pki_root_ca` затем его можно получить из Mine используя `mine.get`
 
@@ -54,19 +65,19 @@ salt 'root_ca.minion.id' mine.get 'root_ca.minion.id' pki_root_ca
 salt-call mine.get 'root_ca.minion.id' pki_root_ca
 ```
 
-### root.policies
+### pki.root.policies
 
 Стейт для настройки политик подписи сертификатов по запросу от других миньонов. Политики задаются в файле [signing_policies/root.jinja](signing_policies/root.jinja), изначально досутпа только одна политика для подписи сертификатов промежуточных центров сертификации.
 
-### intermediate
+### pki.intermediate
 
-Выполнит [pki.intermediate.ca](#intermediate.ca) и [pki.intermediate.policies](#intermediate.policies)
+Выполнит [pki.intermediate.ca](#pkiintermediateca) и [pki.intermediate.policies](#pkiintermediatepolicies)
 
-### intermediate.ca
+### pki.intermediate.ca
 
 Стейт для настройки промежуточнх центров сертификатции, их может быть несколько, они могут быть на разных миньонах для повышения безопасности и для возможности инвалидации всех сертификатов выданных каким-либо отдельным промежуточным центром сертификации. К примеру, может быть промежуточный центр для внутренних сервисов, и отдельный центр сертификации для OpenVPN. Разные промежуточные центры сертификации могут иметь разные политики подписи. Например центр сертификации OpenVPN может выпускать только клиентские сертификаты, их нельзя будет использовать в качестве сертификата HTTP сервера.
 
-### intermediate.policies
+### pki.intermediate.policies
 
 Стейт настраивает политики для выпуска конечных сертификатов: для сервисов и пользователей. Политики берутся из файла `signing_policies/<intermediate_name>.jinja` где `<intermediate_name>`это данные из пиллара `salt_pki.intermediate_ca.name`
 
